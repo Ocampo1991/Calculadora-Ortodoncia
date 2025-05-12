@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Calculadora de Tratamientos</title>
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            font-size: 24px;
+        }
+        label, select, input, button {
+            display: block;
+            margin: 10px 0;
+            font-size: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 24px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        #error-msg {
+            color: red;
+            font-size: 18px;
+            display: none;
+        }
+        #doctor-name {
+            color: green;
+            font-size: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<h1 style="text-align: center;">Calculadora de Tratamientos</h1><div style="text-align: center; margin-top: 10px;"><div style="font-size: 14px; font-family: sans-serif; white-space: pre-line; margin-bottom: 10px;">◊ Josué Arturo Colín Ocampo ◊
+❦ Cirujano Dentista UAEMex
+❦ Especialista en Ortodoncia UAEMex
+❦ Ortopedia Maxilar UNAM
+❦ Maestro en Ciencias Odontológicas UAEMex</div><div style="display: flex; justify-content: center; gap: 10px; align-items: center;"><img src="logo.png" style="width: 120px;"/><img src="logo2.png" style="width: 120px;"/><img src="logo3.png" style="width: 120px;"/></div></div>
+<label for="doctor-code">Código del Doctor:</label>
+<input id="doctor-code" maxlength="4" placeholder="Ingrese código del doctor" type="text"/>
+<button onclick="validarDoctor()">Validar Doctor</button>
+<p id="doctor-name"></p>
+<p id="error-msg">Error: Código de doctor incorrecto. Por favor, ingrese un código válido.</p><label>Fecha:</label><label for="nombre-paciente">Nombre del paciente:</label><input id="nombre-paciente" placeholder="Ingrese el nombre del paciente" style="width: 60%; font-size: 24px;" type="text"/><label for="edad-paciente">Edad del paciente:</label><input id="edad-paciente" maxlength="2" placeholder="Edad" size="2" style="width: 50px; font-size: 20px;" type="text"/>
+<label for="tratamiento">Tipo de Tratamiento:</label>
+<select id="tratamiento" onchange="actualizarOpciones()">
+<option value="ortodoncia">Ortodoncia</option>
+<option value="ortopedia">Ortopedia</option>
+</select>
+<label for="opciones">Opciones de Tratamiento:</label>
+<select id="opciones">
+<option value="metalicos">Ortodoncia Brackets Metálicos</option>
+<option value="ceramicos">Ortodoncia Brackets Cerámicos</option>
+<option value="autoligado-metalico">Ortodoncia Autoligado Metálico</option>
+<option value="autoligado-ceramico">Ortodoncia Autoligado Cerámico</option>
+</select>
+<label for="esquema">Esquema de Pago:</label>
+<select id="esquema">
+<option value="pago-completo">Esquema 1 (Pago completo)</option>
+<option value="diferido">Esquema 2 (Diferido)</option>
+</select>
+<label for="inicio">Comisión por Inicio ($):</label>
+<input id="inicio" placeholder="Ingrese la comisión" type="number"/>
+<label for="mensual">Comisión por Mensualidad ($):</label>
+<input id="mensual" placeholder="Ingrese la comisión" type="number"/>
+<button onclick="calcular()">Calcular</button>
+<div id="resumen-tratamiento" style="margin-top: 30px; font-size: 22px; border: 1px solid #ccc; padding: 20px; display: none;"><h2>Resumen del Tratamiento</h2><p id="resumen-contenido"></p><p id="advertencia-doctor" style="color: red; font-weight: bold;"></p></div><p id="aviso-diferido" style="display:none; color:red; font-weight:bold; margin-top:20px;">⚠️ Ofrecer la opción de pago en parcialidades permite hacer el tratamiento más accesible para muchos pacientes. No obstante, adquirir insumos de manera fraccionada y asumir costos administrativos y logísticos adicionales puede generar un ajuste en el costo total del tratamiento, en comparación con el pago en una sola exhibición. Esta diferencia busca equilibrar los gastos que se generan al extender el proceso de pago en el tiempo.</p><h2 id="pago-inicial"></h2>
+<h2 id="minimo-inicial"></h2>
+<div class="table-container">
+</div>
+<script>
+const doctores = {
+    "1357": "Cristina Gutierrez",
+    "2468": "Abigail Ovando",
+    "1098": "Fabiola Rivera",
+    "2233": "Rosalba Loreto",
+    "1122": "Viridiana Tellez",
+    "4423": "Luisa Raya",
+    "6453": "Perla Valle"
+};
+
+const limites = {
+    "1357": { inicio: 2000, ortodoncia: 300, ortopedia: 200 },
+    "2468": { inicio: 1500, ortodoncia: 250, ortopedia: 200 },
+    "1098": { inicio: 1500, ortodoncia: 200, ortopedia: 200 },
+    "2233": { inicio: 2000, ortodoncia: 200, ortopedia: 200 },
+    "1122": { inicio: 1500, ortodoncia: 300, ortopedia: 200 },
+    "4423": { inicio: 3000, ortodoncia: 300, ortopedia: 200 },
+    "6453": { inicio: 1500, ortodoncia: 250, ortopedia: 200 }
+};
+
+function validarDoctor() {
+    const clave = document.getElementById("doctor-code").value;
+    const errorMsg = document.getElementById("error-msg");
+    const doctorName = document.getElementById("doctor-name");
+
+    if (doctores[clave]) {
+        doctorName.style.display = "block";
+        doctorName.innerText = "Doctor: " + doctores[clave];
+        errorMsg.style.display = "none";
+    } else {
+        doctorName.style.display = "none";
+        errorMsg.style.display = "block";
+    }
+}
+
+function actualizarOpciones() {
+    let tratamiento = document.getElementById("tratamiento").value;
+    let opciones = document.getElementById("opciones");
+    opciones.style.display = (tratamiento === "ortopedia") ? "none" : "block";
+}
+
+function calcular() {
+    const clave = document.getElementById("doctor-code").value;
+    if (!doctores[clave]) {
+        alert("Clave de doctor incorrecta.");
+        return;
+    }
+
+    const doctor = doctores[clave];
+    const limite = limites[clave];
+    const esquema = document.getElementById("esquema").value;
+    const tratamiento = document.getElementById("tratamiento").value;
+    const opciones = document.getElementById("opciones");
+    const opcionTexto = opciones.options[opciones.selectedIndex]?.text || "";
+    const nombrePaciente = document.getElementById("nombre-paciente").value.trim();
+    const dia = document.getElementById("fecha-dia").value;
+    const mes = document.getElementById("fecha-mes").value;
+    const anio = document.getElementById("fecha-anio").value;
+
+    let inicio = parseFloat(document.getElementById("inicio").value) || 0;
+    let comisionMensual = parseFloat(document.getElementById("mensual").value) || 0;
+
+    let costoBase = 0;
+    let pagoMinimo = 0;
+    let mensualidadBase = 0;
+    let tratamientoTexto = "";
+    let ajusteTexto = "";
+
+    if (tratamiento === "ortodoncia") {
+        switch (opciones.value) {
+    case "metalicos":
+        costoBase = (clave === "1357" || clave === "4423") ? 7000 : 6000;
+        pagoMinimo = 4000;
+        mensualidadBase = 600;
+        tratamientoTexto = "Ortodoncia Brackets Metálicos";
+        break;
+    case "ceramicos":
+        costoBase = 9000;
+        pagoMinimo = 6000;
+        mensualidadBase = 700;
+        tratamientoTexto = "Ortodoncia Brackets Cerámicos";
+        break;
+    case "autoligado-metalico":
+        costoBase = 12000;
+        pagoMinimo = 9000;
+        mensualidadBase = 700;
+        tratamientoTexto = "Ortodoncia Autoligado Metálico";
+        break;
+    case "autoligado-ceramico":
+        costoBase = 16000;
+        pagoMinimo = 12000;
+        mensualidadBase = 700;
+        tratamientoTexto = "Ortodoncia Autoligado Cerámico";
+        break;
+}
+    } else {
+        costoBase = 5000;
+        pagoMinimo = 3500;
+        mensualidadBase = 500;
+        tratamientoTexto = "Ortopedia";
+    }
+
+    let excedenteInicio = Math.max(0, inicio - limite.inicio);
+    let excedenteMensual = Math.max(0, comisionMensual - (tratamiento === "ortodoncia" ? limite.ortodoncia : limite.ortopedia));
+    let incrementoAdicional = (esquema === "diferido") ? 1000 : 0;
+    let costoTratamiento = costoBase + incrementoAdicional + excedenteInicio;
+
+    let total = costoTratamiento + inicio;
+    let resumen = `<strong>Doctor:</strong> ${doctor}<br>`;
+    resumen += `<strong>Código del doctor:</strong> ${clave}<br>`;
+    resumen += `<strong>Nombre del paciente:</strong> ${nombrePaciente}<br>`;
+
+    if (excedenteInicio > 0 || excedenteMensual > 0) {
+        ajusteTexto = ` (<span style='color:red'>aumento solicitado por el DR</span>)`;
+    }
+
+    resumen += `<strong>Tratamiento:</strong> ${tratamientoTexto}<br>`;
+    resumen += `<strong>Esquema seleccionado:</strong> ${esquema === "pago-completo" ? "Esquema 1 (Pago completo)" : "Esquema 2 (Diferido)"}<br>`;
+
+    const estilo = "font-size: 1.2em; font-weight: bold;";
+    if (esquema === "diferido" || excedenteInicio > 0 || excedenteMensual > 0) {
+        resumen += `<span style="${estilo}">Costo inicial total que deberá cubrir el paciente:</span> $${total} (<span style="color:red">$${costoTratamiento}</span> + $${inicio})<br>`;
+    } else {
+        resumen += `<span style="${estilo}">Costo inicial total que deberá cubrir el paciente:</span> $${total} ($${costoTratamiento} + $${inicio})<br>`;
+    }
+
+    resumen += `<strong>Comisión por inicio:</strong> $${inicio}<br>`;
+    resumen += `<strong>Comisión por ${tratamiento === "ortodoncia" ? "mensualidad" : "consulta (ortopedia)"}:</strong> $${comisionMensual}<br>`;
+
+    if (esquema === "pago-completo") {
+        resumen += `<strong>Pago inicial a realizar:</strong> $${total}<br>`;
+        resumen += `<strong>Pago mensual durante 36 meses:</strong> $${mensualidadBase + comisionMensual}<br>`;
+    } else {
+        let nuevoMinimo = pagoMinimo + excedenteInicio;
+        resumen += `<strong>Monto mínimo para iniciar tratamiento:</strong> <span style="color:${excedenteInicio > 0 ? 'red' : 'black'}">$${nuevoMinimo}</span><br>`;
+        let montoDiferido = total - nuevoMinimo;
+        let diferidoMensual = montoDiferido / 4;
+        resumen += "<strong>Pagos del paciente del Mes 1 al 4:</strong><br>";
+        for (let i = 1; i <= 4; i++) {
+            let pagoMes = diferidoMensual + mensualidadBase + comisionMensual;
+            resumen += `Mes ${i}: $${pagoMes.toFixed(2)}<br>`;
+        }
+        resumen += `<strong>Pagos a partir del Mes 5 en adelante:</strong><br>$${(mensualidadBase + comisionMensual).toFixed(2)}<br>`;
+        resumen += `<p style="color:red; font-weight:bold;">⚠️ En caso de elegir el pago diferido, la comisión al doctor le será entregada hasta que el paciente haya liquidado su inicio.</p>`;
+    }
+
+    let letrasNombre = nombrePaciente.replace(/\s+/g, '').length;
+    let folio = `DR${clave}-${dia}${mes}${anio}-NOM${String(letrasNombre).padStart(2, '0')}`;
+    resumen += `<br><strong>Folio:</strong> ${folio}`;
+    if (excedenteInicio > 0 || excedenteMensual > 0) {
+        resumen += `<br><span style="color:blue;">⚠️ (Los costos en lista son referenciales y buscan apoyar la economía del paciente según la zona. Si se decide aumentar la comisión, dicho ajuste también se reflejará proporcionalmente en lo que recibe el Dr. Arturo, a fin de mantener la equidad en la distribución de los honorarios.) ⚠️</span>`;
+    }
+
+
+    document.getElementById("resumen-tratamiento").style.display = "block";
+    document.getElementById("resumen-contenido").innerHTML = resumen;
+
+    const avisoExtra = document.getElementById("aviso-diferido");
+    if (avisoExtra) {
+        avisoExtra.style.display = (esquema === "diferido") ? "block" : "none";
+    }
+}
+</script>
+</body>
+</html>
